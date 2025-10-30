@@ -50,15 +50,12 @@ resource "aws_security_group" "rdp" {
   }
 }
 
-# Data sources for default VPC and subnet
-data "aws_vpc" "default" {
-  default = true
-}
+
 
 data "aws_subnets" "default" {
   filter {
     name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
+    values = ["vpc-0c59173db44beeca5"]
   }
 }
 
