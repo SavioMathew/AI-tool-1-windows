@@ -43,7 +43,7 @@ jobs:
         run: terraform output -raw generated_private_key_pem > tf-win-key.pem
 
       - name: Upload private key artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: tf-private-key
           path: tf-win-key.pem
