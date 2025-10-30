@@ -1,51 +1,59 @@
-```powershell
-#cloud-config
 <powershell>
 
-# Variables passed by template: windows_username, windows_password
+# ===============================================
+# Terraform Windows User Setup Script
+# ===============================================
+# This script runs automatically at first boot.
+# It creates a local user, sets permissions, and enables RDP login.
+# Logs are saved to C:\Windows\Temp\userdata.log
+# ===============================================
 
-# Create local user
+# Start logging to file
+Start-Transcript -Path "C:\Windows\Temp\userdata.log" -Append
+
+# Variables passed by Terraform template
 $newUser = "${windows_username}"
 $passwordPlain = "${windows_password}"
+
+Write-Output "Starting user creation for: $newUser"
 
 # Convert plain password to secure string
 $securePass = ConvertTo-SecureString -String $passwordPlain -AsPlainText -Force
 
 # Create local user if it doesn't exist
 if (-not (Get-LocalUser -Name $newUser -ErrorAction SilentlyContinue)) {
-    Write-Output "Creating local user $newUser"
+    Write-Output "Creating new local user: $newUser"
     New-LocalUser -Name $newUser -Password $securePass -PasswordNeverExpires:$true -UserMayNotChangePassword:$false -AccountNeverExpires:$true
 } else {
-    Write-Output "User $newUser already exists. Setting password."
+    Write-Output "User $newUser already exists. Updating password."
     $u = Get-LocalUser -Name $newUser
     $u | Set-LocalUser -Password $securePass
 }
 
-# Optionally, add to 'Users' group; do NOT add to Administrators by default.
+# Add user to local groups
+Write-Output "Adding $newUser to local groups"
 Add-LocalGroupMember -Group "Users" -Member $newUser -ErrorAction SilentlyContinue
+Add-LocalGroupMember -Group "Administrators" -Member $newUser -ErrorAction SilentlyContinue
 
-# Create a folder to set ACLs on
+# Enable RDP access for the new user
+Write-Output "Granting RDP access to $newUser"
+Add-LocalGroupMember -Group "Remote Desktop Users" -Member $newUser -ErrorAction SilentlyContinue
+
+# Create application folder and set permissions
 $folderPath = "C:\app"
 if (-not (Test-Path $folderPath)) {
+    Write-Output "Creating folder: $folderPath"
     New-Item -Path $folderPath -ItemType Directory | Out-Null
 }
 
-# Map POSIX 775 to NTFS:
-# - Owner (the new user) => FullControl
-# - Group (Users) => FullControl
-# - Everyone => ReadAndExecute
-
-# Grant FullControl to owner (the new user)
+Write-Output "Setting ACLs for $folderPath"
 icacls $folderPath /grant "${newUser}:(OI)(CI)F" /T
-
-# Grant FullControl to Users group
 icacls $folderPath /grant "Users:(OI)(CI)F" /T
-
-# Grant Read & Execute to Everyone
 icacls $folderPath /grant "Everyone:(OI)(CI)RX" /T
 
-# Remove inheritance and preserve inherited permissions if desired (optional)
-# icacls $folderPath /inheritance:r
+Write-Output "User $newUser setup and ACL configuration complete."
 
-Write-Output "User and ACL setup complete"
+# Stop logging
+Stop-Transcript
+
 </powershell>
