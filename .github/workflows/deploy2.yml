@@ -38,3 +38,12 @@ jobs:
 
       - name: Apply Terraform
         run: terraform apply -auto-approve
+
+      - name: Save private key PEM
+        run: terraform output -raw generated_private_key_pem > tf-win-key.pem
+
+      - name: Upload private key artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: tf-private-key
+          path: tf-win-key.pem
