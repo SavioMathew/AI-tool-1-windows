@@ -1,45 +1,42 @@
 <powershell>
 
-# ===============================================
-# Terraform Windows User Setup Script
-# ===============================================
-# This script runs automatically at first boot.
-# It creates a local user, sets permissions, and enables RDP login.
-# Logs are saved to C:\Windows\Temp\userdata.log
-# ===============================================
-
-# Start logging to file
+# Optional: enable logging to track script behavior
 Start-Transcript -Path "C:\Windows\Temp\userdata.log" -Append
 
-# Variables passed by Terraform template
+Write-Output "Starting user creation for: ${windows_username}"
+
+# Disable password complexity temporarily (optional)
+Write-Output "Disabling password complexity requirements..."
+secedit /export /cfg C:\secpol.cfg
+(Get-Content C:\secpol.cfg).Replace("PasswordComplexity = 1", "PasswordComplexity = 0") | Set-Content C:\secpol.cfg
+secedit /configure /db C:\Windows\security\local.sdb /cfg C:\secpol.cfg /areas SECURITYPOLICY
+Remove-Item C:\secpol.cfg -Force
+
+# Define variables
 $newUser = "${windows_username}"
 $passwordPlain = "${windows_password}"
 
-Write-Output "Starting user creation for: $newUser"
-
-# Convert plain password to secure string
+# Convert to secure string
 $securePass = ConvertTo-SecureString -String $passwordPlain -AsPlainText -Force
 
-# Create local user if it doesn't exist
+# Create or reset local user
 if (-not (Get-LocalUser -Name $newUser -ErrorAction SilentlyContinue)) {
     Write-Output "Creating new local user: $newUser"
-    New-LocalUser -Name $newUser -Password $securePass -PasswordNeverExpires:$true -UserMayNotChangePassword:$false -AccountNeverExpires:$true
+    New-LocalUser -Name $newUser -Password $securePass -PasswordNeverExpires:$true -AccountNeverExpires:$true
 } else {
-    Write-Output "User $newUser already exists. Updating password."
-    $u = Get-LocalUser -Name $newUser
-    $u | Set-LocalUser -Password $securePass
+    Write-Output "User $newUser already exists. Updating password..."
+    Set-LocalUser -Name $newUser -Password $securePass
 }
 
-# Add user to local groups
+# Add user to the 'Users' group
 Write-Output "Adding $newUser to local groups"
 Add-LocalGroupMember -Group "Users" -Member $newUser -ErrorAction SilentlyContinue
-Add-LocalGroupMember -Group "Administrators" -Member $newUser -ErrorAction SilentlyContinue
 
-# Enable RDP access for the new user
+# Grant RDP access (optional)
 Write-Output "Granting RDP access to $newUser"
-Add-LocalGroupMember -Group "Remote Desktop Users" -Member $newUser -ErrorAction SilentlyContinue
+net localgroup "Remote Desktop Users" $newUser /add
 
-# Create application folder and set permissions
+# Create app folder and set ACLs
 $folderPath = "C:\app"
 if (-not (Test-Path $folderPath)) {
     Write-Output "Creating folder: $folderPath"
@@ -53,7 +50,12 @@ icacls $folderPath /grant "Everyone:(OI)(CI)RX" /T
 
 Write-Output "User $newUser setup and ACL configuration complete."
 
-# Stop logging
-Stop-Transcript
+# Re-enable password complexity
+Write-Output "Re-enabling password complexity requirements..."
+secedit /export /cfg C:\secpol.cfg
+(Get-Content C:\secpol.cfg).Replace("PasswordComplexity = 0", "PasswordComplexity = 1") | Set-Content C:\secpol.cfg
+secedit /configure /db C:\Windows\security\local.sdb /cfg C:\secpol.cfg /areas SECURITYPOLICY
+Remove-Item C:\secpol.cfg -Force
 
+Stop-Transcript
 </powershell>
