@@ -99,7 +99,7 @@ resource "aws_instance" "windows" {
     windows_username = var.windows_username
     windows_password = local.windows_password
     newUser          = var.windows_username
-  }))
+  })
 
   tags = {
     Name = "tf-windows-instance"
