@@ -100,7 +100,7 @@ resource "aws_instance" "windows" {
   # EC2 user data: PowerShell script to create user & set ACLs.
   user_data = base64encode(templatefile("${path.module}/user_data.ps1.tpl", {
     windows_username = var.windows_username
-    windows_password = random_password.windows_user.result
+    windows_password = local.windows_password
   }))
 
   tags = {
