@@ -126,8 +126,8 @@ output "windows_user" {
 }
 
 output "windows_user_password" {
-  description = "Random password created for the windows user (show only once in console). Keep it secure."
-  value       = random_password.windows_user.result
+  description = "Static Windows password"
+  value       = local.windows_password
   sensitive   = true
 }
 
