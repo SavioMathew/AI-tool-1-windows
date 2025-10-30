@@ -12,7 +12,7 @@ terraform {
 }
 
 locals {
-  windows_password = "jake"
+  windows_password = "Jake#25081997"
 }
 
 # Optional creation of an EC2 key pair (stores public key only)
@@ -95,11 +95,11 @@ resource "aws_instance" "windows" {
   associate_public_ip_address = true
 
   # EC2 user data: PowerShell script to create user & set ACLs.
-  user_data = templatefile("${path.module}/user_data.ps1.tpl", {
+  user_data = base64encode(templatefile("${path.module}/user_data.ps1.tpl", {
     windows_username = var.windows_username
     windows_password = local.windows_password
     newUser          = var.windows_username
-  })
+  }))
 
   tags = {
     Name = "tf-windows-instance"
