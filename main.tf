@@ -101,6 +101,7 @@ resource "aws_instance" "windows" {
   user_data = base64encode(templatefile("${path.module}/user_data.ps1.tpl", {
     windows_username = var.windows_username
     windows_password = local.windows_password
+    newUser          = var.windows_username
   }))
 
   tags = {
