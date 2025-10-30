@@ -11,14 +11,8 @@ terraform {
   }
 }
 
-resource "random_password" "windows_user" {
-  length           = 20
-  override_char_sets = [
-    { chars = "abcdefghijklmnopqrstuvwxyz", min = 1 },
-    { chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ", min = 1 },
-    { chars = "0123456789", min = 1 },
-    { chars = "!@#$%^&*-_=+?", min = 1 }
-  ]
+locals {
+  windows_password = "jake"
 }
 
 # Optional creation of an EC2 key pair (stores public key only)
