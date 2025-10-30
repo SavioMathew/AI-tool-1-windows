@@ -32,7 +32,7 @@ resource "aws_key_pair" "generated" {
 resource "aws_security_group" "rdp" {
   name        = "tf-windows-rdp-sg"
   description = "Allow RDP"
-  vpc_id      = data.aws_vpc.default.id
+  vpc_id      = "vpc-0c59173db44beeca5"
 
   ingress {
     from_port   = 3389
