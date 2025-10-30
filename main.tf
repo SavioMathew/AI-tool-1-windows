@@ -24,7 +24,7 @@ resource "tls_private_key" "this" {
 
 resource "aws_key_pair" "generated" {
   count      = var.create_key_pair ? 1 : 0
-  key_name   = "tf-win-key-${random_password.windows_user.id}"
+  key_name   = "tf-win-key"
   public_key = tls_private_key.this[0].public_key_openssh
 }
 
